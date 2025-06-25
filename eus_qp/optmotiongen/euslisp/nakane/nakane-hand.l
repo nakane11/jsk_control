@@ -10,32 +10,13 @@
    ()
    (send-super :init)
    (send self :add-fingertips)
+   (send self :add-butt)
    (send self :init-ending)
    )
   (:add-fingertips
    ()
    (let* ((index-link-3 (send self :index_link_3_lk))
-          (index-dummy-body (make-cube 1e-3 1e-3 1e-3))
-          (middle-link-3 (send self :middle_link_3_lk))
-          (middle-dummy-body (make-cube 1e-3 1e-3 1e-3)))
-     ;; (setq index-fingertip-link (instance bodyset-link
-     ;;                                       :init (make-cascoords)
-     ;;                                       :bodies (list index-dummy-body)
-     ;;                                       :name "index-fingertip"
-     ;;                                       :weight 0))
-     ;; (send index-fingertip-link :newcoords (send index-link-3 :copy-worldcoords))
-     ;; (send index-link-3 :assoc index-fingertip-link)
-     ;; (setq index-fingertip-joint
-     ;;       (instance rotational-joint :init
-     ;;                 :name "index-fingertip-joint"
-     ;;                 :parent-link index-link-3 :child-link index-fingertip-link
-     ;;                 :axis (float-vector 0 0 1)
-     ;;                 :min 0 :max 0
-     ;;                 :max-joint-velocity 0
-     ;;                 :max-joint-torque 0))
-     ;; (setq index-fingertip-coords (make-cascoords
-     ;;                          :coords (send index-fingertip-link :copy-worldcoords)
-     ;;                          :name ":index-fingertip-coords"))
+          (middle-link-3 (send self :middle_link_3_lk)))
      (setq index-fingertip-coords (make-cascoords
                               :coords (send index-link-3 :copy-worldcoords)
                               :name ":index-fingertip-coords"))
@@ -47,28 +28,32 @@
                               :name ":middle-fingertip-coords"))
      (send middle-link-3 :assoc middle-fingertip-coords)
      (send self :put :middle-fingertip-coords middle-fingertip-coords)
+     ))
 
-     ;; (setq middle-fingertip-link (instance bodyset-link
-     ;;                                       :init (make-cascoords)
-     ;;                                       :bodies (list middle-dummy-body)
-     ;;                                       :name "middle-fingertip"
-     ;;                                       :weight 0))
-     ;; (send middle-fingertip-link :newcoords (send middle-link-3 :copy-worldcoords))
-     ;; (send middle-link-3 :assoc middle-fingertip-link)
-     ;; (setq middle-fingertip-joint
-     ;;       (instance rotational-joint :init
-     ;;                 :name "middle-fingertip-joint"
-     ;;                 :parent-link middle-link-3 :child-link middle-fingertip-link
-     ;;                 :axis (float-vector 0 0 1)
-     ;;                 :min 0 :max 0
-     ;;                 :max-joint-velocity 0
-     ;;                 :max-joint-torque 0))
-     ;; (setq middle-fingertip-coords (make-cascoords
-     ;;                          :coords (send middle-fingertip-link :copy-worldcoords)
-     ;;                          :name ":middle-fingertip-coords"))
-     ;; (send middle-fingertip-link :assoc middle-fingertip-coords)
-     ;; (send self :put :middle-fingertip-coords middle-fingertip-coords)
-     ;; (setq links (append links (list index-fingertip-link middle-fingertip-link)))
-     ;; (setq joint-list (append joint-list (list index-fingertip-joint middle-fingertip-joint)))
-   ))
+  (:add-butt
+   ()
+   (let* ((base-link (send self :base_link_lk)))
+     (setq butt-link (instance bodyset-link
+                               :init (make-cascoords)
+                               :bodies (list (make-cube 1e-3 1e-3 1e-3))
+                               :name "butt_link"
+                               :weight 0))
+     (send butt-link :newcoords (send base-link :copy-worldcoords))
+     (send base-link :assoc butt-link)
+     (setq butt-joint
+           (instance rotational-joint :init
+                     :name "butt-joint"
+                     :parent-link base-link :child-link butt-link
+                     :axis (float-vector 0 0 1)
+                     :min 0 :max 0
+                     :max-joint-velocity 0
+                     :max-joint-torque 0))
+     (setq butt-coords (make-cascoords
+                        :coords (send butt-link :copy-worldcoords)
+                        :name ":butt-coords"))
+     (send butt-link :assoc butt-coords)
+     (send self :put :butt-coords butt-coords)
+          (setq links (append links (list butt-link)))
+     (setq joint-list (append joint-list (list butt-joint)))
+     ))
   )
