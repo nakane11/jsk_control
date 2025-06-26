@@ -55,7 +55,30 @@
                         :name ":butt-coords"))
      (send butt-link :assoc butt-coords)
      (send self :put :butt-coords butt-coords)
-          (setq links (append links (list butt-link)))
-     (setq joint-list (append joint-list (list butt-joint)))
+
+     (setq butt-link2 (instance bodyset-link
+                               :init (make-cascoords)
+                               :bodies (list (make-cube 1e-3 1e-3 1e-3))
+                               :name "butt_link2"
+                               :weight 0))
+     (send butt-link2 :newcoords (send base-link :copy-worldcoords))
+     (send butt-link2 :translate #f(-13 -5 0) :local)
+     (send base-link :assoc butt-link2)
+     (setq butt-joint2
+           (instance rotational-joint :init
+                     :name "butt-joint2"
+                     :parent-link base-link :child-link butt-link2
+                     :axis (float-vector 0 1 0)
+                     :min 0 :max 0
+                     :max-joint-velocity 0
+                     :max-joint-torque 0))
+     (setq butt-coords2 (make-cascoords
+                        :coords (send butt-link2 :copy-worldcoords)
+                        :name ":butt-coords2"))
+     (send butt-link2 :assoc butt-coords2)
+     (send self :put :butt-coords2 butt-coords2)
+
+     (setq links (append links (list butt-link butt-link2)))
+     (setq joint-list (append joint-list (list butt-joint butt-joint2)))
      ))
   )

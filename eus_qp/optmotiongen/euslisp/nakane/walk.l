@@ -101,3 +101,75 @@
   (visualize-trajectory-result *ret* :visualize-callback-func visualize-callback-func)
   *ret*
   )
+
+(defun make-face
+  (pos rot height width)
+  (let ((board (make-cube width height 5)) face)
+    (send board :newcoords (make-coords :pos pos :rot rot))
+    (send board :set-color (float-vector 1.0 0.6 0.6))
+    (setq face- (elt (send board :faces) 1))
+    (send face- :put :margin 1) ;; [mm]
+    (send face- :put :normal-move-target-axis :z)
+    (send face- :put :normal-tolerance 10.0) ;; [deg]
+    face-
+    ))
+
+(defun sample-hand-trajectory-ik-with-butt-face
+    (&key
+     (pre-process-func)
+     (post-process-func)
+     (visualize-callback-func)
+     &allow-other-keys
+     )
+  (setq *robot* (instance nakane-hand-robot :init))
+
+  (let ((first-step 130) (stride 60))
+    (setq *arrow-right-list* (mapcar #'(lambda (x) (make-scaled-arrow :length 30)) (make-list 6)))
+    (send (elt *arrow-right-list* 0) :newcoords (make-coords :pos (float-vector 0 0 0)))
+    (send (elt *arrow-right-list* 1) :newcoords (make-coords :pos (float-vector stride 0 0)))
+    (send (elt *arrow-right-list* 2) :newcoords (make-coords :pos (float-vector stride 0 0)))
+    (send (elt *arrow-right-list* 3) :newcoords (make-coords :pos (float-vector (* stride 2) 0 0)))
+    (send (elt *arrow-right-list* 4) :newcoords (make-coords :pos (float-vector (* stride 2) 0 0)))
+    (send (elt *arrow-right-list* 5) :newcoords (make-coords :pos (float-vector (* stride 3) 0 0)))
+
+    (setq *arrow-left-list* (mapcar #'(lambda (x) (make-scaled-arrow :length 30)) (make-list 6)))
+    (send (elt *arrow-left-list* 0) :newcoords (make-coords :pos (float-vector first-step -60 0)))
+    (send (elt *arrow-left-list* 1) :newcoords (make-coords :pos (float-vector first-step -60 0)))
+    (send (elt *arrow-left-list* 2) :newcoords (make-coords :pos (float-vector (+ first-step stride) -60 0)))
+    (send (elt *arrow-left-list* 3) :newcoords (make-coords :pos (float-vector (+ first-step stride) -60 0)))
+    (send (elt *arrow-left-list* 4) :newcoords (make-coords :pos (float-vector (+ first-step (* stride 2)) -60 0)))
+    (send (elt *arrow-left-list* 5) :newcoords (make-coords :pos (float-vector (+ first-step (* stride 2)) -60 0)))
+    )
+
+  (setq *face-list* nil)
+  (dotimes (i (length *arrow-right-list*))
+    (let* ((pos (send (elt *arrow-right-list* i) :pos))
+           (rot (send (elt *arrow-right-list* i) :rot))
+           (face- (make-face pos rot 10 200)))
+      (setq *face-list* (append *face-list* (list face-)))))
+
+  (setq
+   *ret*
+   (send *robot*
+         :inverse-kinematics-trajectory-optmotiongen
+         (mapcar
+          #'(lambda (rc lc) (list rc rc lc))
+          *face-list*
+          (send-all *arrow-left-list* :copy-worldcoords)
+          )
+         :move-target-list (list
+                            (send *robot* :get :butt-coords)
+                            (send *robot* :get :butt-coords2)
+                            (send *robot* :get :index-fingertip-coords))
+         :rotation-axis-list
+         (make-list 6 :initial-element (list nil nil nil))
+         :debug-view (list :additional-draw-objects (append *arrow-right-list* *arrow-left-list*))
+         :root-virtual-mode :6dof
+         :root-virtual-joint-invariant? nil
+         :pre-process-func pre-process-func
+         :post-process-func post-process-func
+         ))
+  (objects (append (list *robot*) *arrow-right-list* *arrow-left-list*))
+  (visualize-trajectory-result *ret* :visualize-callback-func visualize-callback-func)
+  *ret*
+  )
