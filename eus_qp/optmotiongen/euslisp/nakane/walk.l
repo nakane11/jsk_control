@@ -104,14 +104,15 @@
 
 (defun make-face
   (pos rot height width)
-  (let ((board (make-cube width height 5)) face)
-    (send board :newcoords (make-coords :pos pos :rot rot))
-    (send board :set-color (float-vector 1.0 0.6 0.6))
+  (let ((board (make-cube width height 5)) face-)
+    (send board :newcoords (send (make-coords :pos pos :rot rot) :copy-worldcoords))
+    (send board :set-color (float-vector 1.0 0.6 (+ (/ (random 20) 40.0) 0.3)))
+    (send board :translate (float-vector 0 0 (* -0.5 (z-of-cube board))) :local)
     (setq face- (elt (send board :faces) 1))
     (send face- :put :margin 1) ;; [mm]
     (send face- :put :normal-move-target-axis :z)
     (send face- :put :normal-tolerance 10.0) ;; [deg]
-    face-
+    (cons face- board)
     ))
 
 (defun sample-hand-trajectory-ik-with-butt-face
@@ -142,18 +143,22 @@
     )
 
   (setq *face-list* nil)
+  (setq *board-list* nil)
   (dotimes (i (length *arrow-right-list*))
-    (let* ((pos (send (elt *arrow-right-list* i) :pos))
-           (rot (send (elt *arrow-right-list* i) :rot))
-           (face- (make-face pos rot 100 200)))
-      (setq *face-list* (append *face-list* (list face-)))))
+    (let* ((pos- (send (elt *arrow-right-list* i) :pos))
+           (rot- (send (elt *arrow-right-list* i) :rot))
+           (tmp (make-face pos- rot- 500 500))
+           (face- (car tmp)) (board- (cdr tmp)))
+      (setq *face-list* (append *face-list* (list face-)))
+      (setq *board-list* (append *board-list* (list board-)))))
+
 
   (setq
    *ret*
    (send *robot*
          :inverse-kinematics-trajectory-optmotiongen
          (mapcar
-          #'(lambda (rc rc2 lc) (list rc rc2 lc))
+          #'(lambda (butt butt2 lc) (list butt butt2 lc))
           (send-all *arrow-right-list* :copy-worldcoords)
           *face-list*
           (send-all *arrow-left-list* :copy-worldcoords)
@@ -164,13 +169,14 @@
                             (send *robot* :get :index-fingertip-coords))
          :rotation-axis-list
          (make-list 6 :initial-element (list nil nil nil))
+         ;; (make-list 3 :initial-element (list nil nil nil))
          :debug-view (list :additional-draw-objects (append *arrow-right-list* *arrow-left-list*))
          :root-virtual-mode :6dof
          :root-virtual-joint-invariant? nil
          :pre-process-func pre-process-func
          :post-process-func post-process-func
          ))
-  (objects (append (list *robot*) *arrow-right-list* *arrow-left-list*))
+  (objects (append (list *robot*) *arrow-right-list* *arrow-left-list* *board-list*))
   (visualize-trajectory-result *ret* :visualize-callback-func visualize-callback-func)
   *ret*
   )
