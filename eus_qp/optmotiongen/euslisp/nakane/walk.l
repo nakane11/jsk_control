@@ -90,7 +90,7 @@
                             (send *robot* :get :butt-coords)
                             (send *robot* :get :index-fingertip-coords))
          :rotation-axis-list
-         (make-list 6 :initial-element (make-list 2 :initial-element nil))
+         (make-list 6 :initial-element (list nil nil))
          :debug-view (list :additional-draw-objects (append *arrow-right-list* *arrow-left-list*))
          :root-virtual-mode :6dof
          :root-virtual-joint-invariant? nil

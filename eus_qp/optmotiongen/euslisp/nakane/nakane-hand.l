@@ -20,6 +20,7 @@
      (setq index-fingertip-coords (make-cascoords
                               :coords (send index-link-3 :copy-worldcoords)
                               :name ":index-fingertip-coords"))
+     (send index-fingertip-coords :translate #f(13 0 2) :local)
      (send index-link-3 :assoc index-fingertip-coords)
      (send self :put :index-fingertip-coords index-fingertip-coords)
 
@@ -39,12 +40,13 @@
                                :name "butt_link"
                                :weight 0))
      (send butt-link :newcoords (send base-link :copy-worldcoords))
+     (send butt-link :translate #f(-13 0 0) :local)
      (send base-link :assoc butt-link)
      (setq butt-joint
            (instance rotational-joint :init
                      :name "butt-joint"
                      :parent-link base-link :child-link butt-link
-                     :axis (float-vector 0 0 1)
+                     :axis (float-vector 0 1 0)
                      :min 0 :max 0
                      :max-joint-velocity 0
                      :max-joint-torque 0))
