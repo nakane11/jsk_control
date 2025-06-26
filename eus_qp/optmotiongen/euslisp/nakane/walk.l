@@ -59,21 +59,23 @@
      &allow-other-keys
      )
   (setq *robot* (instance nakane-hand-robot :init))
-  (setq *arrow-right-list* (mapcar #'(lambda (x) (make-scaled-arrow :length 30)) (make-list 6)))
-  (send (elt *arrow-right-list* 0) :newcoords (make-coords :pos #f(0 0 0)))
-  (send (elt *arrow-right-list* 1) :newcoords (make-coords :pos #f(40 0 0)))
-  (send (elt *arrow-right-list* 2) :newcoords (make-coords :pos #f(40 0 0)))
-  (send (elt *arrow-right-list* 3) :newcoords (make-coords :pos #f(80 0 0)))
-  (send (elt *arrow-right-list* 4) :newcoords (make-coords :pos #f(80 0 0)))
-  (send (elt *arrow-right-list* 5) :newcoords (make-coords :pos #f(120 0 0)))
+  (let ((first-step 130) (stride 60))
+    (setq *arrow-right-list* (mapcar #'(lambda (x) (make-scaled-arrow :length 30)) (make-list 6)))
+    (send (elt *arrow-right-list* 0) :newcoords (make-coords :pos (float-vector 0 0 0)))
+    (send (elt *arrow-right-list* 1) :newcoords (make-coords :pos (float-vector stride 0 0)))
+    (send (elt *arrow-right-list* 2) :newcoords (make-coords :pos (float-vector stride 0 0)))
+    (send (elt *arrow-right-list* 3) :newcoords (make-coords :pos (float-vector (* stride 2) 0 0)))
+    (send (elt *arrow-right-list* 4) :newcoords (make-coords :pos (float-vector (* stride 2) 0 0)))
+    (send (elt *arrow-right-list* 5) :newcoords (make-coords :pos (float-vector (* stride 3) 0 0)))
 
-  (setq *arrow-left-list* (mapcar #'(lambda (x) (make-scaled-arrow :length 30)) (make-list 6)))
-  (send (elt *arrow-left-list* 0) :newcoords (make-coords :pos #f(100 -60 0)))
-  (send (elt *arrow-left-list* 1) :newcoords (make-coords :pos #f(100 -60 0)))
-  (send (elt *arrow-left-list* 2) :newcoords (make-coords :pos #f(140 -60 0)))
-  (send (elt *arrow-left-list* 3) :newcoords (make-coords :pos #f(140 -60 0)))
-  (send (elt *arrow-left-list* 4) :newcoords (make-coords :pos #f(180 -60 0)))
-  (send (elt *arrow-left-list* 5) :newcoords (make-coords :pos #f(180 -60 0)))
+    (setq *arrow-left-list* (mapcar #'(lambda (x) (make-scaled-arrow :length 30)) (make-list 6)))
+    (send (elt *arrow-left-list* 0) :newcoords (make-coords :pos (float-vector first-step -60 0)))
+    (send (elt *arrow-left-list* 1) :newcoords (make-coords :pos (float-vector first-step -60 0)))
+    (send (elt *arrow-left-list* 2) :newcoords (make-coords :pos (float-vector (+ first-step stride) -60 0)))
+    (send (elt *arrow-left-list* 3) :newcoords (make-coords :pos (float-vector (+ first-step stride) -60 0)))
+    (send (elt *arrow-left-list* 4) :newcoords (make-coords :pos (float-vector (+ first-step (* stride 2)) -60 0)))
+    (send (elt *arrow-left-list* 5) :newcoords (make-coords :pos (float-vector (+ first-step (* stride 2)) -60 0)))
+    )
 
   (setq
    *ret*
@@ -90,7 +92,7 @@
          :rotation-axis-list
          (make-list 6 :initial-element (make-list 2 :initial-element nil))
          :debug-view (list :additional-draw-objects (append *arrow-right-list* *arrow-left-list*))
-         :root-virtual-mode :planar
+         :root-virtual-mode :6dof
          :root-virtual-joint-invariant? nil
          :pre-process-func pre-process-func
          :post-process-func post-process-func
