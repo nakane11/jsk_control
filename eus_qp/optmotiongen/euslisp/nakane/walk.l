@@ -145,7 +145,7 @@
   (dotimes (i (length *arrow-right-list*))
     (let* ((pos (send (elt *arrow-right-list* i) :pos))
            (rot (send (elt *arrow-right-list* i) :rot))
-           (face- (make-face pos rot 10 200)))
+           (face- (make-face pos rot 100 200)))
       (setq *face-list* (append *face-list* (list face-)))))
 
   (setq
@@ -153,7 +153,8 @@
    (send *robot*
          :inverse-kinematics-trajectory-optmotiongen
          (mapcar
-          #'(lambda (rc lc) (list rc rc lc))
+          #'(lambda (rc rc2 lc) (list rc rc2 lc))
+          (send-all *arrow-right-list* :copy-worldcoords)
           *face-list*
           (send-all *arrow-left-list* :copy-worldcoords)
           )
