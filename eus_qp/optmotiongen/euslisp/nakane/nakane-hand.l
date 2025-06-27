@@ -21,12 +21,15 @@
                               :coords (send index-link-3 :copy-worldcoords)
                               :name ":index-fingertip-coords"))
      (send index-fingertip-coords :translate #f(13 0 2) :local)
+     (send index-fingertip-coords :rotate (deg2rad -20) :y :local)
      (send index-link-3 :assoc index-fingertip-coords)
      (send self :put :index-fingertip-coords index-fingertip-coords)
 
      (setq middle-fingertip-coords (make-cascoords
                               :coords (send middle-link-3 :copy-worldcoords)
                               :name ":middle-fingertip-coords"))
+     (send middle-fingertip-coords :translate #f(13 0 2) :local)
+     (send middle-fingertip-coords :rotate (deg2rad -20) :y :local)
      (send middle-link-3 :assoc middle-fingertip-coords)
      (send self :put :middle-fingertip-coords middle-fingertip-coords)
      ))
