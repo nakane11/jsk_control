@@ -1,5 +1,6 @@
 (require "nakane-hand.l")
 (require "make-scaled-arrow.l")
+(require "util.l")
 (require "../sample/sample-inverse-kinematics.l")
 
 (defun sample-hand-trajectory-ik-with-fingers
@@ -51,70 +52,6 @@
   *ret*
   )
 
-(defun sample-hand-trajectory-ik-with-butt
-    (&key
-     (pre-process-func)
-     (post-process-func)
-     (visualize-callback-func)
-     &allow-other-keys
-     )
-  (setq *robot* (instance nakane-hand-robot :init))
-  (let ((first-step 130) (stride 60))
-    (setq *arrow-right-list* (mapcar #'(lambda (x) (make-scaled-arrow :length 30)) (make-list 6)))
-    (send (elt *arrow-right-list* 0) :newcoords (make-coords :pos (float-vector 0 0 0)))
-    (send (elt *arrow-right-list* 1) :newcoords (make-coords :pos (float-vector stride 0 0)))
-    (send (elt *arrow-right-list* 2) :newcoords (make-coords :pos (float-vector stride 0 0)))
-    (send (elt *arrow-right-list* 3) :newcoords (make-coords :pos (float-vector (* stride 2) 0 0)))
-    (send (elt *arrow-right-list* 4) :newcoords (make-coords :pos (float-vector (* stride 2) 0 0)))
-    (send (elt *arrow-right-list* 5) :newcoords (make-coords :pos (float-vector (* stride 3) 0 0)))
-
-    (setq *arrow-left-list* (mapcar #'(lambda (x) (make-scaled-arrow :length 30)) (make-list 6)))
-    (send (elt *arrow-left-list* 0) :newcoords (make-coords :pos (float-vector first-step -60 0)))
-    (send (elt *arrow-left-list* 1) :newcoords (make-coords :pos (float-vector first-step -60 0)))
-    (send (elt *arrow-left-list* 2) :newcoords (make-coords :pos (float-vector (+ first-step stride) -60 0)))
-    (send (elt *arrow-left-list* 3) :newcoords (make-coords :pos (float-vector (+ first-step stride) -60 0)))
-    (send (elt *arrow-left-list* 4) :newcoords (make-coords :pos (float-vector (+ first-step (* stride 2)) -60 0)))
-    (send (elt *arrow-left-list* 5) :newcoords (make-coords :pos (float-vector (+ first-step (* stride 2)) -60 0)))
-    )
-
-  (setq
-   *ret*
-   (send *robot*
-         :inverse-kinematics-trajectory-optmotiongen
-         (mapcar
-          #'(lambda (rc lc) (list rc lc))
-          (send-all *arrow-right-list* :copy-worldcoords)
-          (send-all *arrow-left-list* :copy-worldcoords)
-          )
-         :move-target-list (list
-                            (send *robot* :get :butt-coords)
-                            (send *robot* :get :index-fingertip-coords))
-         :rotation-axis-list
-         (make-list 6 :initial-element (list nil nil))
-         :debug-view (list :additional-draw-objects (append *arrow-right-list* *arrow-left-list*))
-         :root-virtual-mode :6dof
-         :root-virtual-joint-invariant? nil
-         :pre-process-func pre-process-func
-         :post-process-func post-process-func
-         ))
-  (objects (append (list *robot*) *arrow-right-list* *arrow-left-list*))
-  (visualize-trajectory-result *ret* :visualize-callback-func visualize-callback-func)
-  *ret*
-  )
-
-(defun make-face
-  (pos rot height width)
-  (let ((board (make-cube width height 5)) face-)
-    (send board :newcoords (send (make-coords :pos pos :rot rot) :copy-worldcoords))
-    (send board :set-color (float-vector 1.0 0.6 (+ (/ (random 20) 40.0) 0.3)))
-    (send board :translate (float-vector 0 0 (* -0.5 (z-of-cube board))) :local)
-    (setq face- (elt (send board :faces) 1))
-    (send face- :put :margin 1) ;; [mm]
-    (send face- :put :normal-move-target-axis :z)
-    (send face- :put :normal-tolerance 10.0) ;; [deg]
-    (cons face- board)
-    ))
-
 (defun sample-hand-trajectory-ik-with-butt-face
     (&key
      (pre-process-func)
@@ -124,7 +61,7 @@
      )
   (setq *robot* (instance nakane-hand-robot :init))
 
-  (let ((first-step 130) (stride 60))
+  (let ((first-step 110) (stride 60))
     (setq *arrow-right-list* (mapcar #'(lambda (x) (make-scaled-arrow :length 30)) (make-list 6)))
     (send (elt *arrow-right-list* 0) :newcoords (make-coords :pos (float-vector 0 0 0)))
     (send (elt *arrow-right-list* 1) :newcoords (make-coords :pos (float-vector stride 0 0)))
@@ -152,7 +89,6 @@
       (setq *face-list* (append *face-list* (list face-)))
       (setq *board-list* (append *board-list* (list board-)))))
 
-
   (setq
    *ret*
    (send *robot*
@@ -169,7 +105,6 @@
                             (send *robot* :get :index-fingertip-coords))
          :rotation-axis-list
          (make-list 6 :initial-element (list nil nil nil))
-         ;; (make-list 3 :initial-element (list nil nil nil))
          :debug-view (list :additional-draw-objects (append *arrow-right-list* *arrow-left-list*))
          :root-virtual-mode :6dof
          :root-virtual-joint-invariant? nil
@@ -177,6 +112,39 @@
          :post-process-func post-process-func
          ))
   (objects (append (list *robot*) *arrow-right-list* *arrow-left-list* *board-list*))
-  (visualize-trajectory-result *ret* :visualize-callback-func visualize-callback-func)
   *ret*
   )
+
+(defun sample-carry-cube
+    ()
+  (unless (boundp '*irtviewer*)
+    (make-irtviewer))
+  (setq *robot* (instance nakane-hand-robot :init))
+  (let* ((butt-body (make-face (float-vector 105 0 0) #2f((1.0 0.0 0.0) (0.0 1.0 0.0) (0.0 0.0 1.0)) 200 200))
+         (butt-face (car butt-body)) (butt-cube (cdr butt-body))
+         (cube- (make-cube 80 80 40)) finger-face)
+
+    (send cube- :translate (float-vector 250 0 (* 0.5 (z-of-cube cube-))))
+    (setq finger-face (elt (send cube- :faces) 1))
+    (send finger-face :put :margin 1)
+    (send finger-face :put :normal-move-target-axis :z)
+    (send finger-face :put :normal-tolerance 10.0)
+
+    (objects (list *robot* cube- butt-cube))
+
+    (send *robot*
+          :inverse-kinematics-optmotiongen
+          (list butt-face finger-face finger-face)
+          :move-target (list (send *robot* :get :butt-coords)
+                             (send *robot* :get :index-fingertip-coords)
+                             (send *robot* :get :middle-fingertip-coords))
+          :rotation-axis (list :nil :t :t)
+          :debug-view t
+          :root-virtual-mode :6dof
+          :root-virtual-joint-invariant? nil
+          )
+    )
+  )
+;; 箱の上に人差し指と中指を置く
+;; assoc
+;; 箱の下とおしりで歩行
