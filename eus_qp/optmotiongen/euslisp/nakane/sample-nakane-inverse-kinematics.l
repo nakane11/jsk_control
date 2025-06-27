@@ -120,31 +120,57 @@
   (unless (boundp '*irtviewer*)
     (make-irtviewer))
   (setq *robot* (instance nakane-hand-robot :init))
-  (let* ((butt-body (make-face (float-vector 105 0 0) #2f((1.0 0.0 0.0) (0.0 1.0 0.0) (0.0 0.0 1.0)) 200 200))
-         (butt-face (car butt-body)) (butt-cube (cdr butt-body))
-         (cube- (make-cube 80 80 40)) finger-face)
-
-    (send cube- :translate (float-vector 250 0 (* 0.5 (z-of-cube cube-))))
+  (let ((cube- (make-cube 80 80 40)) finger-face (stride 40))
+    (send cube- :translate (float-vector 250 20 (* 0.5 (z-of-cube cube-))))
     (setq finger-face (elt (send cube- :faces) 1))
     (send finger-face :put :margin 1)
     (send finger-face :put :normal-move-target-axis :z)
     (send finger-face :put :normal-tolerance 10.0)
 
-    (objects (list *robot* cube- butt-cube))
+    (let* ((butt-body (make-face (float-vector 105 20 0) #2f((1.0 0.0 0.0) (0.0 1.0 0.0) (0.0 0.0 1.0)) 140 200))
+           (butt-face (car butt-body)) (butt-cube (cdr butt-body)))
+      (objects (list *robot* cube- butt-cube))
 
-    (send *robot*
-          :inverse-kinematics-optmotiongen
-          (list butt-face finger-face finger-face)
-          :move-target (list (send *robot* :get :butt-coords)
-                             (send *robot* :get :index-fingertip-coords)
-                             (send *robot* :get :middle-fingertip-coords))
-          :rotation-axis (list :nil :t :t)
-          :debug-view t
-          :root-virtual-mode :6dof
-          :root-virtual-joint-invariant? nil
-          )
+      ;; 箱の上に人差し指と中指を置く
+      (send *robot*
+            :inverse-kinematics-optmotiongen
+            (list butt-face finger-face finger-face)
+            :move-target (list (send *robot* :get :butt-coords2)
+                               (send *robot* :get :index-fingertip-coords)
+                               (send *robot* :get :middle-fingertip-coords))
+            :rotation-axis (list nil t t)
+            :debug-view t
+            :root-virtual-mode :6dof
+            :root-virtual-joint-invariant? nil
+            )
+
+      (setq new-butt-coords (make-coords))
+      (send new-butt-coords :replace-pos (send (send (send *robot* :get :butt-coords) :copy-worldcoords) :pos))
+      (send new-butt-coords :translate (float-vector stride 0 0) :world)
+      (setq butt-body (make-face (send new-butt-coords :pos) (send new-butt-coords :rot) 140 200))
+      (setq butt-face (car butt-body))
+      (setq butt-cube (cdr butt-body))
+      (setq butt-arrow (make-scaled-arrow :length 30))
+      (send butt-arrow :newcoords (send new-butt-coords :copy-worldcoords))
+
+      (setq new-middle-coords (make-coords))
+      (send new-middle-coords :replace-pos (send (send (send *robot* :get :middle-fingertip-coords) :copy-worldcoords) :pos))
+      (setq middle-arrow (make-scaled-arrow :length 30))
+      (send middle-arrow :newcoords new-middle-coords)
+
+      (objects (list *robot* cube- butt-cube butt-arrow middle-arrow))
+      (print new-middle-coords)
+      (print new-butt-coords)
+
+      (send *robot*
+            :inverse-kinematics-optmotiongen
+            (list new-middle-coords new-butt-coords)
+            :move-target (list (send *robot* :get :middle-fingertip-coords)
+                               (send *robot* :get :butt-coords))
+            :rotation-axis (list nil nil)
+            :debug-view t
+            :root-virtual-mode :6dof
+            )
+      )
     )
   )
-;; 箱の上に人差し指と中指を置く
-;; assoc
-;; 箱の下とおしりで歩行
