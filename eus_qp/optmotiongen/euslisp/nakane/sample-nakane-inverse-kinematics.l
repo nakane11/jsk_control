@@ -174,3 +174,59 @@
       )
     )
   )
+
+(defun sample-hand-trajectory-ik-cube
+    (&key
+     (pre-process-func)
+     (post-process-func)
+     (visualize-callback-func)
+     &allow-other-keys
+     )
+  (setq *robot* (instance nakane-hand-robot :init))
+
+  (let ((cube- (make-cube 80 80 40))
+        (butt-target (make-coords :pos #f(66.456 32.626 -0.774)))
+        (index-target (make-coords :pos #f(211.049 -9.337 40.235)))
+        (stride 40))
+    (send cube- :translate (float-vector 250 20 (* 0.5 (z-of-cube cube-))))
+    (objects (list *robot* cube-))
+    ;; 箱の上に人差し指を置く
+    (send *robot*
+          :inverse-kinematics-optmotiongen
+          (list butt-target index-target)
+          :move-target (list (send *robot* :get :butt-coords2)
+                             (send *robot* :get :index-fingertip-coords))
+          :rotation-axis (list nil nil)
+          :debug-view t
+          :root-virtual-mode :6dof
+          :root-virtual-joint-invariant? nil
+          )
+
+    (send (send *robot* :get :index-fingertip-coords) :assoc cube-)
+
+    ;; (setq *index-list*
+    ;;       (list (make-coords :pos (float-vector 211.049 -9.337 40.235))
+    ;;             (make-coords :pos (float-vector (+ stride 211.049) -9.337 40.235))))
+
+    ;; (setq *butt-list*
+    ;;       (list (make-coords :pos (float-vector (+ stride 66.456) 32.626 -0.774))
+    ;;             (make-coords :pos (float-vector (+ stride 66.456) 32.626 -0.774))))
+
+    ;; (setq
+    ;;  *ret*
+    ;;  (send *robot*
+    ;;        :inverse-kinematics-trajectory-optmotiongen
+    ;;        (mapcar
+    ;;         #'(lambda (butt index) (list butt index))
+    ;;         (send-all *butt-list* :copy-worldcoords)
+    ;;         (send-all *index-list* :copy-worldcoords)
+    ;;         )
+    ;;        :move-target-list (list (send *robot* :get :butt-coords)
+    ;;                                (send *robot* :get :index-fingertip-coords))
+    ;;        :rotation-axis-list
+    ;;        (make-list 2 :initial-element (list nil nil))
+    ;;        :debug-view t
+    ;;        :root-virtual-mode :6dof
+    ;;        :root-virtual-joint-invariant? nil
+    ;;        ))
+    ))

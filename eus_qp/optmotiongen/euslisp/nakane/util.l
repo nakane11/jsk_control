@@ -12,7 +12,7 @@
   (pos rot height width)
   (let ((board (make-cube width height 5)) face-)
     (send board :newcoords (send (make-coords :pos pos :rot rot) :copy-worldcoords))
-    (send board :set-color (float-vector (+ (/ (random 20) 30.0) 0.3) (+ (/ (random 20) 30.0) 0.3) (+ (/ (random 20) 30.0) 0.3)))
+    (send board :set-color (float-vector (+ (/ (random 20) 30.0) 0.3) (+ (/ (random 20) 30.0) 0.3) (+ (/ (random 20) 30.0) 0.3) 0.5))
     (send board :translate (float-vector 0 0 (* -0.5 (z-of-cube board))) :local)
     (setq face- (elt (send board :faces) 1))
     (send face- :put :margin 1) ;; [mm]
