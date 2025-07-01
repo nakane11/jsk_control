@@ -53,6 +53,7 @@
                                :weight 0))
      (send butt-link :newcoords (send base-link :copy-worldcoords))
      (send butt-link :translate #f(-13 0 0) :local)
+     (send butt-link :rotate (deg2rad 45) :y :local)
      (send base-link :assoc butt-link)
      (setq butt-joint
            (instance rotational-joint :init
@@ -75,6 +76,7 @@
                                :weight 0))
      (send butt-link2 :newcoords (send base-link :copy-worldcoords))
      (send butt-link2 :translate #f(-13 -5 0) :local)
+     (send butt-link2 :rotate (deg2rad 45) :y :local)
      (send base-link :assoc butt-link2)
      (setq butt-joint2
            (instance rotational-joint :init

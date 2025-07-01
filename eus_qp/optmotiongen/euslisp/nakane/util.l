@@ -17,6 +17,7 @@
     (setq face- (elt (send board :faces) 1))
     (send face- :put :margin 1) ;; [mm]
     (send face- :put :normal-move-target-axis :z)
-    (send face- :put :normal-tolerance 10.0) ;; [deg]
+    (send face- :put :normal-tolerance-y 45.0) ;; [deg]
+    (send face- :put :normal-tolerance-x 5.0) ;; [deg]
     (cons face- board)
     ))
