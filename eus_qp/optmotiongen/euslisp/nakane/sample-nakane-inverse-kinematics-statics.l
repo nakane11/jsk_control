@@ -326,7 +326,7 @@
     (&key
      (optimize-torque? nil)
      (loop-num 50)
-     (step 5)
+     (step 4)
      )
 
   (setq *robot* (instance nakane-hand-robot :init))
@@ -372,29 +372,32 @@
 
   (dotimes (i step)
       ;; setup contact
-    (let ((face- (elt (send (elt *ground-butt2-list* i) :faces) 1)))
+    (let ((face- (elt (send (elt *ground-butt2-list* i) :faces) 1))
+          (obj (copy-object *obj*))
+          (robot (copy-object *robot*)))
       (send face- :put :normal-tolerance-y 65.0) ;; [deg]
       (send face- :put :normal-tolerance-x 10.0) ;; [deg]
-      (setq butt2-contact (generate-contact-ik-arg-from-rect-face :rect-face face-)))
+      (setq butt2-contact (generate-contact-ik-arg-from-rect-face :rect-face face-))
     (setq butt-contact (instance contact-ik-arg :init
                                  :target-coords (send (elt *arrow-butt-list* i) :copy-worldcoords)
                                  :translation-axis t
                                  :rotation-axis nil
+
                                  :transform-coords (send (elt *arrow-butt-list* i) :copy-worldcoords)
                                  ))
     (setq index-contact (instance contact-ik-arg :init
-                                  :target-coords (send *obj* :handle-top)
+                                  :target-coords (send obj :handle-top)
                                   :translation-axis t
                                   :rotation-axis nil
-                                  :transform-coords (send *obj* :handle-top)
+                                  :transform-coords (send obj :handle-top)
                                   ))
     (setq contact-list
           (list butt2-contact butt-contact index-contact))
     (setq robot-obj-env
-          (instance robot-object-environment :init :robot *robot* :object *obj* :contact-list contact-list))
+          (instance robot-object-environment :init :robot robot :object obj :contact-list contact-list))
+    )
 
-    (push (copy-object robot-obj-env) *robot-env-list*)
-
+    (push robot-obj-env *robot-env-list*)
     (push
      (instance* instant-manipulation-configuration-task :init
                 :robot-env (car *robot-env-list*)
@@ -409,6 +412,7 @@
                  nil
                  (list ;; (send butt2-contact :contact-coords)
                   (send butt-contact :contact-coords)
+                  ;; (send index-contact :contact-coords)
                    (send (send (car *robot-env-list*) :object) :handle-top)
                    (send (elt *arrow-obj-list* i) :copy-worldcoords)
                        ))
@@ -459,7 +463,8 @@
                      :norm-regular-scale-max 1e-6
                      ))
                 )
-     *instant-config-task-list*))
+     *instant-config-task-list*)
+    )
 
   (setq *trajectory-config-task*
         (instance trajectory-configuration-task :init
@@ -472,13 +477,14 @@
         (instance sqp-optimization :init
                   :config-task *trajectory-config-task*
                   ))
+  ;; 1回目は最後のtargetがその前と同じになってしまう．2回目で成功
   (send *sqp-opt* :optimize :loop-num loop-num)
-
   (objects (append (list (car *robot-env-list*)) *env-list*))
   (send *trajectory-config-task* :play-animation
         :robot-env (car *robot-env-list*)
         :loop? nil
         :visualize-callback-func nil
         )
+  *sqp-opt*
   )
 (warn "(sample-hand-sqp-trajectory-instant-manip-config-task)~%")

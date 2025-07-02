@@ -15,7 +15,7 @@
       (send self :assoc cube-obj)
       (send self :put :object-coords
             (make-cascoords :parent cube-obj :coords (send self :copy-worldcoords)))
-      (setq handle-top (make-cascoords :coords (send cube-obj :copy-worldcoords)))
+      (setq handle-top (make-cascoords :coords (send cube-obj :copy-worldcoords) :name "handle-top"))
       (send handle-top :replace-pos (float-vector -35 -18 (z-of-cube cube-body)))
       (send cube-obj :assoc handle-top)
       (setq links (list cube-obj))
