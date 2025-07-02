@@ -7,7 +7,7 @@
   (:init
    ()
    (send-super* :init nil)
-    (let* ((cube-body (make-cube 80 80 40))
+    (let* ((cube-body (make-cube 80 80 60))
            cube-obj)
       (send cube-body :set-color (float-vector 0.8 0.2 0.2 0.5))
       (send cube-body :translate (float-vector 0 0 (* 0.5 (z-of-cube cube-body))))
