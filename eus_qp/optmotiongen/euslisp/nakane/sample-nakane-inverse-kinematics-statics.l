@@ -338,24 +338,22 @@
   (setq *arrow-obj-list* (mapcar #'(lambda (x) (make-scaled-arrow :length 30)) (make-list step)))
   (setq *arrow-index-list* (mapcar #'(lambda (x) (make-scaled-arrow :length 30)) (make-list step)))
 
-  ;; (dotimes (i step)
-  ;;   (let ((new-coords (send (send (make-coords :pos (float-vector -144 0 -10)) :copy-worldcoords) :translate (float-vector (* i 30) 0 0)))
-  ;;         (col (float-vector 0.2 (- 0.7 (* i 0.05)) (+ 0.2 (* i 0.05)) 0.5)))
-  ;;     (send (elt *ground-butt2-list* i) :set-color col)
-  ;;     (send (elt *ground-butt2-list* i) :newcoords new-coords)
-  ;;     ))
-
   (setq *robot-env-list* nil)
   (setq *instant-config-task-list* nil)
 
   (dotimes (i step)
     ;; setup environment
-    (send (elt *arrow-butt-list* i) :newcoords (send (make-coords :pos (float-vector -144 37 0)) :translate (float-vector (* i 30) 0 0)))
-
-    (send (elt *arrow-obj-list* i) :newcoords (send (make-coords :pos (float-vector 0 0 0)) :translate (float-vector (* i 30) 0 0)))
+    ;; (send (elt *ground-butt2-list* i) :set-color (float-vector 0.2 (- 0.7 (* i 0.05)) (+ 0.2 (* i 0.05)) 0.5))
+    ;; (send (elt *ground-butt2-list* i) :newcoords (send (send (make-coords :pos (float-vector -124 0 -10)) :copy-worldcoords) :translate (float-vector (* i 50) 0 0)))
+    (send (elt *arrow-butt-list* i) :newcoords (send (make-coords :pos (float-vector -124 37 0)) :translate (float-vector (* i 50) 0 0)))
+    (send (elt *arrow-obj-list* i) :newcoords (send (make-coords :pos (float-vector 0 0 0)) :translate (float-vector (* i 50) 0 0)))
     (send (elt *arrow-index-list* i) :newcoords (send (send (elt *arrow-obj-list* i) :copy-worldcoords) :translate (send (send *obj* :handle-top) :copy-pos)))
 
     ;; setup contact
+    ;; (let ((face- (elt (send (elt *ground-butt2-list* i) :faces) 1)))
+    ;;   (send face- :put :normal-tolerance-y 50.0) ;; [deg]
+    ;;   (send face- :put :normal-tolerance-x 10.0) ;; [deg]
+    ;;   (setq butt2-contact (generate-contact-ik-arg-from-rect-face :rect-face face- :name "butt2-contact")))
     (setq butt-contact (instance contact-ik-arg :init
                                  :name "butt-contact"
                                  :target-coords (send (elt *arrow-butt-list* i) :copy-worldcoords)
@@ -388,7 +386,8 @@
                 :kin-target-coords-list
                 (remove
                  nil
-                 (list ;; (send butt2-contact :contact-coords)
+                 (list
+                  ;; (send (send (car *robot-env-list*) :contact "butt2-contact") :contact-coords)
                   (send (send (car *robot-env-list*) :contact "butt-contact") :contact-coords)
                   (send (send (car *robot-env-list*) :contact "index-contact") :contact-coords)
                    (send (elt *arrow-obj-list* i) :copy-worldcoords)
@@ -396,11 +395,12 @@
                 :kin-attention-coords-list
                 (remove
                  nil
-                 (list ;; (send (car *robot-env-list*) :robot :get :butt-coords2)
-                       (send (car *robot-env-list*) :robot :get :butt-coords)
-                       (send (car *robot-env-list*) :robot :get :index-fingertip-coords)
-                       (send (car *robot-env-list*) :object :get :object-coords)
-                       ))
+                 (list
+                  ;; (send (car *robot-env-list*) :robot :get :butt-coords2)
+                  (send (car *robot-env-list*) :robot :get :butt-coords)
+                  (send (car *robot-env-list*) :robot :get :index-fingertip-coords)
+                  (send (car *robot-env-list*) :object :get :object-coords)
+                  ))
                 :contact-target-coords-list
                 (list ;; (send butt2-contact :contact-coords)
                       (send butt-contact :contact-coords)
@@ -454,7 +454,6 @@
     (send *irtviewer* :floor-color (float-vector 0 0 0))
     )
   (objects (append (list *robot* *obj*) *env-list*))
-
 
   (setq *trajectory-config-task*
         (instance trajectory-configuration-task :init
