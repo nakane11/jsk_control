@@ -336,6 +336,7 @@
   ;; (setq *ground-butt2-list* (mapcar #'(lambda (x) (make-cube 200 200 20)) (make-list step)))
   (setq *arrow-butt-list* (mapcar #'(lambda (x) (make-scaled-arrow :length 30)) (make-list step)))
   (setq *arrow-obj-list* (mapcar #'(lambda (x) (make-scaled-arrow :length 30)) (make-list step)))
+  (setq *arrow-index-list* (mapcar #'(lambda (x) (make-scaled-arrow :length 30)) (make-list step)))
 
   ;; (dotimes (i step)
   ;;   (let ((new-coords (send (send (make-coords :pos (float-vector -144 0 -10)) :copy-worldcoords) :translate (float-vector (* i 30) 0 0)))
@@ -352,30 +353,27 @@
     (send (elt *arrow-butt-list* i) :newcoords (send (make-coords :pos (float-vector -144 37 0)) :translate (float-vector (* i 30) 0 0)))
 
     (send (elt *arrow-obj-list* i) :newcoords (send (make-coords :pos (float-vector 0 0 0)) :translate (float-vector (* i 30) 0 0)))
+    (send (elt *arrow-index-list* i) :newcoords (send (send (elt *arrow-obj-list* i) :copy-worldcoords) :translate (send (send *obj* :handle-top) :copy-pos)))
 
     ;; setup contact
-    ;; (let ((obj (copy-object *obj*))
-    ;;       (robot (copy-object *robot*)))
-      ;; (send face- :put :normal-tolerance-y 65.0) ;; [deg]
-      ;; (send face- :put :normal-tolerance-x 10.0) ;; [deg]
-      ;; (setq butt2-contact (generate-contact-ik-arg-from-rect-face :rect-face face-))
     (setq butt-contact (instance contact-ik-arg :init
+                                 :name "butt-contact"
                                  :target-coords (send (elt *arrow-butt-list* i) :copy-worldcoords)
                                  :translation-axis t
                                  :rotation-axis nil
                                  :transform-coords (send (elt *arrow-butt-list* i) :copy-worldcoords)
                                  ))
     (setq index-contact (instance contact-ik-arg :init
-                                  :target-coords (send *obj* :handle-top)
+                                  :name "index-contact"
+                                  :target-coords (send (elt *arrow-index-list* i) :copy-worldcoords)
                                   :translation-axis t
                                   :rotation-axis nil
-                                  :transform-coords (send *obj* :handle-top)
+                                  :transform-coords (send (elt *arrow-index-list* i) :copy-worldcoords)
                                   ))
     (setq contact-list
           (list butt-contact index-contact))
     (setq *robot-obj-env*
           (instance robot-object-environment :init :robot *robot* :object *obj* :contact-list contact-list))
-      ;; )
 
     (push (copy-object *robot-obj-env*) *robot-env-list*)
     (push
@@ -391,9 +389,8 @@
                 (remove
                  nil
                  (list ;; (send butt2-contact :contact-coords)
-                  (send butt-contact :contact-coords)
-                  ;; (send index-contact :contact-coords)
-                   (send (send (car *robot-env-list*) :object) :handle-top)
+                  (send (send (car *robot-env-list*) :contact "butt-contact") :contact-coords)
+                  (send (send (car *robot-env-list*) :contact "index-contact") :contact-coords)
                    (send (elt *arrow-obj-list* i) :copy-worldcoords)
                        ))
                 :kin-attention-coords-list
@@ -446,9 +443,7 @@
      *instant-config-task-list*)
     )
 
-  ;; (setq *arrow-index* (make-scaled-arrow :length 30))
-  ;; (send *arrow-index* :newcoords (send *obj* :handle-top))
-  (setq *env-list* (append  *arrow-butt-list* *arrow-obj-list*))
+  (setq *env-list* (append  *arrow-butt-list* *arrow-obj-list* *arrow-index-list*))
   (send-all *env-list* :worldcoords)
 
   ;; draw
