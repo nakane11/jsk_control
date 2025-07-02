@@ -332,72 +332,52 @@
   (setq *robot* (instance nakane-hand-robot :init))
   (setq *obj* (instance cube-object :init))
 
-  ;; setup environment
-  (setq *ground-butt2-list* (mapcar #'(lambda (x) (make-cube 200 200 20)) (make-list step)))
-  (dotimes (i (length *ground-butt2-list*))
-    (let ((new-coords (send (send (make-coords :pos (float-vector -144 0 -10)) :copy-worldcoords) :translate (float-vector (* i 30) 0 0)))
-          (col (float-vector 0.2 (- 0.7 (* i 0.05)) (+ 0.2 (* i 0.05)) 0.5)))
-      (send (elt *ground-butt2-list* i) :set-color col)
-      (send (elt *ground-butt2-list* i) :newcoords new-coords)
-      ))
 
+  ;; (setq *ground-butt2-list* (mapcar #'(lambda (x) (make-cube 200 200 20)) (make-list step)))
   (setq *arrow-butt-list* (mapcar #'(lambda (x) (make-scaled-arrow :length 30)) (make-list step)))
-  (dotimes (i (length *arrow-butt-list*))
-    (let ((new-coords (send (send (make-coords :pos (float-vector -144 37 0)) :copy-worldcoords) :translate (float-vector (* i 30) 0 0))))
-      (send (elt *arrow-butt-list* i) :newcoords new-coords)
-      ))
-
   (setq *arrow-obj-list* (mapcar #'(lambda (x) (make-scaled-arrow :length 30)) (make-list step)))
-  (dotimes (i (length *arrow-obj-list*))
-    (let ((new-coords (send (send (make-coords :pos (float-vector 0 0 0)) :copy-worldcoords) :translate (float-vector (* i 30) 0 0))))
-      (send (elt *arrow-obj-list* i) :newcoords new-coords)
-      ))
 
-  (setq *arrow-index* (make-scaled-arrow :length 30))
-  (send *arrow-index* :newcoords (send *obj* :handle-top))
-  (setq *env-list* (append *ground-butt2-list* *arrow-butt-list* *arrow-obj-list* (list *arrow-index*)))
-  (send-all *env-list* :worldcoords)
-
-  ;; draw
-  (unless (boundp '*irtviewer*)
-    (make-irtviewer)
-    (send *irtviewer* :change-background (float-vector 1 1 1))
-    (send *irtviewer* :draw-floor 500)
-    (send *irtviewer* :floor-color (float-vector 0 0 0))
-    )
-  (objects (append (list *robot* *obj*) *env-list*))
+  ;; (dotimes (i step)
+  ;;   (let ((new-coords (send (send (make-coords :pos (float-vector -144 0 -10)) :copy-worldcoords) :translate (float-vector (* i 30) 0 0)))
+  ;;         (col (float-vector 0.2 (- 0.7 (* i 0.05)) (+ 0.2 (* i 0.05)) 0.5)))
+  ;;     (send (elt *ground-butt2-list* i) :set-color col)
+  ;;     (send (elt *ground-butt2-list* i) :newcoords new-coords)
+  ;;     ))
 
   (setq *robot-env-list* nil)
   (setq *instant-config-task-list* nil)
 
   (dotimes (i step)
-      ;; setup contact
-    (let ((face- (elt (send (elt *ground-butt2-list* i) :faces) 1))
-          (obj (copy-object *obj*))
-          (robot (copy-object *robot*)))
-      (send face- :put :normal-tolerance-y 65.0) ;; [deg]
-      (send face- :put :normal-tolerance-x 10.0) ;; [deg]
-      (setq butt2-contact (generate-contact-ik-arg-from-rect-face :rect-face face-))
+    ;; setup environment
+    (send (elt *arrow-butt-list* i) :newcoords (send (make-coords :pos (float-vector -144 37 0)) :translate (float-vector (* i 30) 0 0)))
+
+    (send (elt *arrow-obj-list* i) :newcoords (send (make-coords :pos (float-vector 0 0 0)) :translate (float-vector (* i 30) 0 0)))
+
+    ;; setup contact
+    ;; (let ((obj (copy-object *obj*))
+    ;;       (robot (copy-object *robot*)))
+      ;; (send face- :put :normal-tolerance-y 65.0) ;; [deg]
+      ;; (send face- :put :normal-tolerance-x 10.0) ;; [deg]
+      ;; (setq butt2-contact (generate-contact-ik-arg-from-rect-face :rect-face face-))
     (setq butt-contact (instance contact-ik-arg :init
                                  :target-coords (send (elt *arrow-butt-list* i) :copy-worldcoords)
                                  :translation-axis t
                                  :rotation-axis nil
-
                                  :transform-coords (send (elt *arrow-butt-list* i) :copy-worldcoords)
                                  ))
     (setq index-contact (instance contact-ik-arg :init
-                                  :target-coords (send obj :handle-top)
+                                  :target-coords (send *obj* :handle-top)
                                   :translation-axis t
                                   :rotation-axis nil
-                                  :transform-coords (send obj :handle-top)
+                                  :transform-coords (send *obj* :handle-top)
                                   ))
     (setq contact-list
-          (list butt2-contact butt-contact index-contact))
-    (setq robot-obj-env
-          (instance robot-object-environment :init :robot robot :object obj :contact-list contact-list))
-    )
+          (list butt-contact index-contact))
+    (setq *robot-obj-env*
+          (instance robot-object-environment :init :robot *robot* :object *obj* :contact-list contact-list))
+      ;; )
 
-    (push robot-obj-env *robot-env-list*)
+    (push (copy-object *robot-obj-env*) *robot-env-list*)
     (push
      (instance* instant-manipulation-configuration-task :init
                 :robot-env (car *robot-env-list*)
@@ -466,6 +446,21 @@
      *instant-config-task-list*)
     )
 
+  ;; (setq *arrow-index* (make-scaled-arrow :length 30))
+  ;; (send *arrow-index* :newcoords (send *obj* :handle-top))
+  (setq *env-list* (append  *arrow-butt-list* *arrow-obj-list*))
+  (send-all *env-list* :worldcoords)
+
+  ;; draw
+  (unless (boundp '*irtviewer*)
+    (make-irtviewer)
+    (send *irtviewer* :change-background (float-vector 1 1 1))
+    (send *irtviewer* :draw-floor 500)
+    (send *irtviewer* :floor-color (float-vector 0 0 0))
+    )
+  (objects (append (list *robot* *obj*) *env-list*))
+
+
   (setq *trajectory-config-task*
         (instance trajectory-configuration-task :init
                   :instant-config-task-list (reverse *instant-config-task-list*)
@@ -477,14 +472,16 @@
         (instance sqp-optimization :init
                   :config-task *trajectory-config-task*
                   ))
-  ;; 1回目は最後のtargetがその前と同じになってしまう．2回目で成功
+
+  ;; play-animationの内部でrobot-envが書き換わってしまうためコピーを渡す
   (send *sqp-opt* :optimize :loop-num loop-num)
-  (objects (append (list (car *robot-env-list*)) *env-list*))
-  (send *trajectory-config-task* :play-animation
-        :robot-env (car *robot-env-list*)
-        :loop? nil
-        :visualize-callback-func nil
-        )
+  (let ((robot-env (copy-object (car *robot-env-list*))))
+    (objects (append (list robot-env) *env-list*))
+    (send *trajectory-config-task* :play-animation
+          :robot-env robot-env
+          :loop? nil
+          :visualize-callback-func nil
+          ))
   *sqp-opt*
   )
 (warn "(sample-hand-sqp-trajectory-instant-manip-config-task)~%")
