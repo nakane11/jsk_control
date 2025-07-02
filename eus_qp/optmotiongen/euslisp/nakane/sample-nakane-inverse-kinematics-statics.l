@@ -336,7 +336,7 @@
   (dotimes (i step)
     ;; setup environment
     ;; (send (elt *ground-butt2-list* i) :set-color (float-vector 0.2 (- 0.7 (* i 0.05)) (+ 0.2 (* i 0.05)) 0.5))
-    ;; (send (elt *ground-butt2-list* i) :newcoords (send (send (make-coords :pos (float-vector -124 0 -10)) :copy-worldcoords) :translate (float-vector (* i 50) 0 0)))          
+    ;; (send (elt *ground-butt2-list* i) :newcoords (send (send (make-coords :pos (float-vector -124 0 -10)) :copy-worldcoords) :translate (float-vector (* i 50) 0 0)))
     (send (elt *arrow-butt-list* i) :newcoords
           (send (make-coords :pos (float-vector -124 37 0)) :translate (float-vector (* (/ i 2) 50) 0 0)))
     (send (elt *arrow-obj-list* i) :newcoords (send (make-coords :pos (float-vector 0 0 0)) :translate (float-vector (* (/ (+ i 1) 2) 50) 0 0)))
@@ -477,3 +477,168 @@
   )
 (warn "(sample-hand-sqp-trajectory-instant-manip-config-task-walk)~%")
 
+(defun sample-hand-sqp-trajectory-instant-manip-config-task-walk-curve
+    (&key
+     (optimize-torque? nil)
+     (loop-num 50)
+     (step 10)
+     )
+
+  (setq *robot* (instance nakane-hand-robot :init))
+  (setq *obj* (instance cube-object :init))
+
+
+  ;; (setq *ground-butt2-list* (mapcar #'(lambda (x) (make-cube 200 200 20)) (make-list step)))
+  (setq *arrow-butt-list* (mapcar #'(lambda (x) (make-scaled-arrow :length 30)) (make-list step)))
+  (setq *arrow-obj-list* (mapcar #'(lambda (x) (make-scaled-arrow :length 30)) (make-list step)))
+  (setq *arrow-index-list* (mapcar #'(lambda (x) (make-scaled-arrow :length 30)) (make-list step)))
+
+  (setq *robot-env-list* nil)
+  (setq *instant-config-task-list* nil)
+
+  (dotimes (i step)
+    ;; setup environment
+    (setq rot- 15)
+
+    (when (eq i 0)
+      (send (elt *arrow-obj-list* i) :newcoords (make-coords :pos (float-vector 0 0 0)))
+      (send (elt *arrow-butt-list* i) :newcoords (make-coords :pos (float-vector -124 37 0))))
+    (when (> i 0)
+      (send (elt *arrow-obj-list* i) :newcoords (send (elt *arrow-obj-list* (- i 1)) :copy-worldcoords))
+      (when (oddp i)
+            (send (elt *arrow-obj-list* i) :rotate (deg2rad rot-) :z :local)
+            (send (elt *arrow-obj-list* i) :translate (float-vector 85 0 0) :local)
+            (send (elt *arrow-butt-list* i) :newcoords (send (elt *arrow-butt-list* (- i 1)) :copy-worldcoords))
+            )
+      (send (elt *arrow-index-list* i) :newcoords (send (send (elt *arrow-obj-list* i) :copy-worldcoords) :translate (send (send *obj* :handle-top) :copy-pos) :local))
+
+      (when (evenp i)
+        (send (elt *arrow-butt-list* i) :newcoords (send (elt *arrow-obj-list* (- i 1)) :copy-worldcoords))
+        (send (elt *arrow-butt-list* i) :translate (float-vector -124 37 0) :local)))
+
+    ;; setup contact
+    (setq butt-contact (instance contact-ik-arg :init
+                                 :name "butt-contact"
+                                 :target-coords (send (elt *arrow-butt-list* i) :copy-worldcoords)
+                                 :translation-axis t
+                                 :rotation-axis :yz
+                                 :transform-coords (send (elt *arrow-butt-list* i) :copy-worldcoords)
+                                 ))
+    (setq index-contact (instance contact-ik-arg :init
+                                  :name "index-contact"
+                                  :target-coords (send (elt *arrow-index-list* i) :copy-worldcoords)
+                                  :translation-axis t
+                                  :rotation-axis nil
+                                  :transform-coords (send (elt *arrow-index-list* i) :copy-worldcoords)
+                                  ))
+    (setq contact-list
+          (list butt-contact index-contact))
+    (setq *robot-obj-env*
+          (instance robot-object-environment :init :robot *robot* :object *obj* :contact-list contact-list))
+
+    (push (copy-object *robot-obj-env*) *robot-env-list*)
+    (push
+     (instance* instant-manipulation-configuration-task :init
+                :robot-env (car *robot-env-list*)
+                :drive-joint-list
+                (if optimize-torque? (send (car *robot-env-list*) :drive-joint-list) nil)
+                :posture-joint-list
+                (send (car *robot-env-list*) :robot :joint-list)
+                :posture-joint-angle-list
+                (send-all (send (car *robot-env-list*) :robot :joint-list) :joint-angle)
+                :kin-target-coords-list
+                (remove
+                 nil
+                 (list
+                  (send (send (car *robot-env-list*) :contact "butt-contact") :contact-coords)
+                  (send (send (car *robot-env-list*) :contact "index-contact") :contact-coords)
+                   (send (elt *arrow-obj-list* i) :copy-worldcoords)
+                       ))
+                :kin-attention-coords-list
+                (remove
+                 nil
+                 (list
+                  (send (car *robot-env-list*) :robot :get :butt-coords)
+                  (send (car *robot-env-list*) :robot :get :index-fingertip-coords)
+                  (send (car *robot-env-list*) :object :get :object-coords)
+                  ))
+                :contact-target-coords-list
+                (list
+                 (send butt-contact :contact-coords)
+                 (send index-contact :contact-coords)
+                 (send (elt *arrow-obj-list* i) :copy-worldcoords)
+                 )
+                :contact-attention-coords-list
+                (list
+                 (send (car *robot-env-list*) :robot :get :butt-coords)
+                 (send (car *robot-env-list*) :robot :get :index-fingertip-coords)
+                 (send (car *robot-env-list*) :object :get :object-coords)
+                 )
+                :contact-constraint-list
+                (list
+                 (instance 6d-min-max-contact-constraint
+                           :init (float-vector 1000 1000 1000 10 10 10))
+                 (instance 6d-min-max-contact-constraint
+                           :init (float-vector 1000 1000 1000 10 10 10))
+                 (instance 6d-min-max-contact-constraint
+                           :init (float-vector 1000 1000 1000 10 10 10))
+                 )
+                :contact-target-coords-obj-list
+                (list (send (car *robot-env-list*) :object :handle-top)
+                      )
+                :contact-constraint-obj-list
+                (list
+                 (instance 6d-min-max-contact-constraint
+                           :init (float-vector 1000 1000 1000 10 10 10))
+                 )
+                :collision-distance-margin 0.05
+                :delta-linear-joint 100 ;; [mm]
+                :delta-rotational-joint 30 ;; [deg]
+                (if optimize-torque?
+                    (list
+                     :norm-regular-scale-max 1e-6
+                     ))
+                )
+     *instant-config-task-list*)
+    )
+
+  (setq *env-list* (append  *arrow-butt-list* *arrow-obj-list* *arrow-index-list*))
+  (send-all *env-list* :worldcoords)
+
+  ;; draw
+  (unless (boundp '*irtviewer*)
+    (make-irtviewer)
+    (send *irtviewer* :change-background (float-vector 1 1 1))
+    (send *irtviewer* :draw-floor 500)
+    (send *irtviewer* :floor-color (float-vector 0 0 0))
+    )
+  (objects (append (list *robot* *obj*) *env-list*))
+
+  (setq *trajectory-config-task*
+        (instance trajectory-configuration-task :init
+                  :instant-config-task-list (reverse *instant-config-task-list*)
+                  :adjacent-regular-scale 1e-5
+                  :torque-regular-scale 1e-3
+                  ))
+
+  (setq *sqp-opt*
+        (instance sqp-optimization :init
+                  :config-task *trajectory-config-task*
+                  ))
+
+  ;; play-animationの内部でrobot-envが書き換わってしまうためコピーを渡す
+  (send *sqp-opt* :optimize :loop-num loop-num)
+  (let ((robot-env (copy-object (car *robot-env-list*))))
+    (objects (append (list robot-env) *env-list*))
+    (send *irtviewer* :viewer :viewing :look #f(534.307 1535.54 602.867) #f(205.72 389.622 96.8508) #f(0.0 0.0 1.0))
+    (send *irtviewer* :logging :start)
+    (send *trajectory-config-task* :play-animation
+          :robot-env robot-env
+          :loop? nil
+          :visualize-callback-func nil
+          )
+    (send *irtviewer* :logging :stop)
+    )
+  *sqp-opt*
+  )
+(warn "(sample-hand-sqp-trajectory-instant-manip-config-task-walk-curve)~%")
