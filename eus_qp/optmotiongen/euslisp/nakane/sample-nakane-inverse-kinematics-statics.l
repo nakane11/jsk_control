@@ -13,7 +13,7 @@
      )
 
   (setq *robot* (instance nakane-hand-robot :init))
-  (setq *obj* (instance cube-object :init))
+  (setq *obj* (instance cube-object :init 80 80 40))
 
   ;; setup environment
   (setq *ground-butt2* (make-cube 200 200 20))
@@ -164,7 +164,7 @@
      )
 
   (setq *robot* (instance nakane-hand-robot :init))
-  (setq *obj* (instance cube-object :init))
+  (setq *obj* (instance cube-object :init 80 80 40))
 
 
   ;; (setq *ground-butt2-list* (mapcar #'(lambda (x) (make-cube 200 200 20)) (make-list step)))
@@ -322,7 +322,7 @@
      )
 
   (setq *robot* (instance nakane-hand-robot :init))
-  (setq *obj* (instance cube-object :init))
+  (setq *obj* (instance cube-object :init 80 80 40))
 
 
   ;; (setq *ground-butt2-list* (mapcar #'(lambda (x) (make-cube 200 200 20)) (make-list step)))
@@ -485,7 +485,7 @@
      )
 
   (setq *robot* (instance nakane-hand-robot :init))
-  (setq *obj* (instance cube-object :init))
+  (setq *obj* (instance cube-object :init 80 80 60))
 
 
   ;; (setq *ground-butt2-list* (mapcar #'(lambda (x) (make-cube 200 200 20)) (make-list step)))
