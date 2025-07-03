@@ -10,6 +10,7 @@
    ()
    (send-super :init)
    (send self :add-fingertips)
+   (send self :add-fingerside)
    (send self :add-butt)
    (send self :init-ending)
    )
@@ -40,7 +41,38 @@
      (send ring-fingertip-coords :translate #f(13 0 2) :local)
      (send ring-fingertip-coords :rotate (deg2rad -20) :y :local)
      (send ring-link-3 :assoc ring-fingertip-coords)
-     (send self :put :ring-fingertip-coords ring-fingertip-coords)     
+     (send self :put :ring-fingertip-coords ring-fingertip-coords)
+     ))
+
+  (:add-fingerside
+   ()
+   (let* ((index-link-3 (send self :index_link_3_lk))
+          (middle-link-3 (send self :middle_link_3_lk))
+          (little-link-3 (send self :little_link_3_lk)))
+
+     (setq little-outside-coords (make-cascoords
+                              :coords (send little-link-3 :copy-worldcoords)
+                              :name ":little-outside-coords"))
+     (send little-outside-coords :rotate (deg2rad 90) :x :local)
+     (send little-outside-coords :translate #f(8 0 -5) :local)
+     (send little-link-3 :assoc little-outside-coords)
+     (send self :put :little-outside-coords little-outside-coords)
+
+     (setq index-outside-coords (make-cascoords
+                              :coords (send index-link-3 :copy-worldcoords)
+                              :name ":index-outside-coords"))
+     (send index-outside-coords :rotate (deg2rad 90) :x :local)
+     (send index-outside-coords :translate #f(8 0 -5) :local)
+     (send index-link-3 :assoc index-outside-coords)
+     (send self :put :index-outside-coords index-outside-coords)
+
+     (setq middle-inside-coords (make-cascoords
+                              :coords (send middle-link-3 :copy-worldcoords)
+                              :name ":middle-inside-coords"))
+     (send middle-inside-coords :rotate (deg2rad 90) :x :local)
+     (send middle-inside-coords :translate #f(8 0 5) :local)
+     (send middle-link-3 :assoc middle-inside-coords)
+     (send self :put :middle-inside-coords middle-inside-coords)
      ))
 
   (:add-butt
@@ -92,7 +124,30 @@
      (send butt-link2 :assoc butt-coords2)
      (send self :put :butt-coords2 butt-coords2)
 
-     (setq links (append links (list butt-link butt-link2)))
-     (setq joint-list (append joint-list (list butt-joint butt-joint2)))
+     (setq butt-outside-link (instance bodyset-link
+                               :init (make-cascoords)
+                               :bodies (list (make-cube 1e-3 1e-3 1e-3))
+                               :name "butt_outside_link"
+                               :weight 0))
+     (send butt-outside-link :newcoords (send base-link :copy-worldcoords))
+     (send butt-outside-link :rotate (deg2rad 90) :x :local)
+     (send butt-outside-link :translate #f(45 0 -30) :local)
+     (send base-link :assoc butt-outside-link)
+     (setq butt-outside-joint
+           (instance rotational-joint :init
+                     :name "butt-outside-joint"
+                     :parent-link base-link :child-link butt-outside-link
+                     :axis (float-vector 0 1 0)
+                     :min 0 :max 0
+                     :max-joint-velocity 0
+                     :max-joint-torque 0))
+     (setq butt-outside-coords (make-cascoords
+                        :coords (send butt-outside-link :copy-worldcoords)
+                        :name ":butt-outside-coords"))
+     (send butt-outside-link :assoc butt-outside-coords)
+     (send self :put :butt-outside-coords butt-outside-coords)
+
+     (setq links (append links (list butt-link butt-link2 butt-outside-link)))
+     (setq joint-list (append joint-list (list butt-joint butt-joint2 butt-outside-joint)))
      ))
   )
