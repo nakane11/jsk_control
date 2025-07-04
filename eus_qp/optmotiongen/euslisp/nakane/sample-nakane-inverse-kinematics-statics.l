@@ -426,7 +426,12 @@
                  (instance 6d-min-max-contact-constraint
                            :init (float-vector 1000 1000 1000 10 10 10))
                  )
-                :collision-distance-margin 0.05
+                ;; :collision-pair-list
+                ;; (mapcar
+                ;;  #'(lambda (l)
+                ;;      (list l (send (car *robot-env-list*) :object :get :convex-hull-body)))
+                ;;  (send (send (car *robot-env-list*) :robot) :links))
+                :collision-distance-margin 0.1
                 :delta-linear-joint 100 ;; [mm]
                 :delta-rotational-joint 30 ;; [deg]
                 (if optimize-torque?
@@ -917,7 +922,7 @@
   ;; draw
   (unless (boundp '*irtviewer*)
     (make-irtviewer)
-    (send *irtviewer* :change-background (float-vector 0 0 0))
+    (send *irtviewer* :change-background (float-vector 0.9 0.8 0.66))
     (send *irtviewer* :draw-floor 500)
     (send *irtviewer* :floor-color (float-vector 1 1 1))
     )
